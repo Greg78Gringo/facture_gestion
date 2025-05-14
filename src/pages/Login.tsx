@@ -5,26 +5,36 @@ import Logo from '../components/Logo';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-      navigate('/');
+      if (isSignup) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (error) throw error;
+        setError('Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.');
+        setIsSignup(false);
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+        navigate('/');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setLoading(false);
     }
@@ -37,18 +47,18 @@ const Login = () => {
           <Logo />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Connexion
+          {isSignup ? 'Créer un compte' : 'Connexion'}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Entrez vos identifiants pour vous connecter
+          {isSignup ? 'Créez votre compte pour commencer' : 'Entrez vos identifiants pour vous connecter'}
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleLogin}>
+          <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              <div className={`bg-${error.includes('succès') ? 'green' : 'red'}-50 border border-${error.includes('succès') ? 'green' : 'red'}-200 text-${error.includes('succès') ? 'green' : 'red'}-600 px-4 py-3 rounded-lg text-sm`}>
                 {error}
               </div>
             )}
@@ -81,7 +91,7 @@ const Login = () => {
                   id="password"
                   name="password"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete={isSignup ? 'new-password' : 'current-password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -96,7 +106,7 @@ const Login = () => {
                 disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                {loading ? 'Connexion...' : 'Connexion'}
+                {loading ? (isSignup ? 'Création...' : 'Connexion...') : (isSignup ? 'Créer mon compte' : 'Connexion')}
               </button>
             </div>
           </form>
@@ -104,12 +114,15 @@ const Login = () => {
           <div className="mt-6">
             <div className="relative">
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 text-gray-500">
-                  Vous n'avez pas de compte ?{' '}
-                  <a href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
-                    Créer un compte
-                  </a>
-                </span>
+                <button 
+                  onClick={() => {
+                    setIsSignup(!isSignup);
+                    setError(null);
+                  }}
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
+                  {isSignup ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un compte'}
+                </button>
               </div>
             </div>
           </div>
